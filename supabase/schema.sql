@@ -18,12 +18,19 @@ alter table public.complaints
 alter table public.complaints enable row level security;
 
 drop policy if exists "Allow public complaint submissions" on public.complaints;
+drop policy if exists "Allow public complaint reads" on public.complaints;
 
 create policy "Allow public complaint submissions"
   on public.complaints
   for insert
   to anon
   with check (true);
+
+create policy "Allow public complaint reads"
+  on public.complaints
+  for select
+  to anon
+  using (true);
 
 insert into storage.buckets (id, name, public)
 values ('complaint-images', 'complaint-images', false)

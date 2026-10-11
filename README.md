@@ -31,7 +31,7 @@ The production server is also available at [http://localhost:3000](http://localh
 
 ## Supabase complaint storage
 
-Complaint submission uses the browser's location permission and stores the coordinates in Supabase. The app requires a Supabase project configured with these environment variables:
+Complaint submission uses the browser's location permission and stores the report in Supabase. The staff workspace reads the same `complaints` table through `/api/complaints`, so newly submitted public reports appear in the complaints list and map. The app requires a Supabase project configured with these environment variables:
 
 ```bash
 SUPABASE_URL=https://your-project.supabase.co
