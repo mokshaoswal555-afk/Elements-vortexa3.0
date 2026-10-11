@@ -8,6 +8,7 @@ create table if not exists public.complaints (
   details text,
   latitude double precision not null check (latitude between -90 and 90),
   longitude double precision not null check (longitude between -180 and 180),
+  image_paths jsonb not null default '[]'::jsonb,
   status text not null default 'Submitted',
   created_at timestamptz not null default now()
 );
@@ -29,10 +30,12 @@ where complaint_domain is null
     'Waterlogging & Flooding',
     'Parks & Public Spaces'
   );
+  add column if not exists image_paths jsonb not null default '[]'::jsonb;
 
 alter table public.complaints enable row level security;
 
 drop policy if exists "Allow public complaint submissions" on public.complaints;
+drop policy if exists "Allow public complaint reads" on public.complaints;
 
 create policy "Allow public complaint submissions"
   on public.complaints
@@ -40,14 +43,22 @@ create policy "Allow public complaint submissions"
   to anon
   with check (true);
 
-drop policy if exists "Allow officer complaint viewing" on public.complaints;
-
-create policy "Allow officer complaint viewing"
+create policy "Allow public complaint reads"
   on public.complaints
   for select
   to anon
   using (true);
 
-revoke select on public.complaints from anon;
-grant select (id, tracking_id, complaint_domain, category, title, location_text, details, status, created_at)
-  on public.complaints to anon;
+insert into storage.buckets (id, name, public)
+values ('complaint-images', 'complaint-images', false)
+on conflict (id) do update
+set name = excluded.name,
+    public = excluded.public;
+
+drop policy if exists "Allow public complaint image uploads" on storage.objects;
+
+create policy "Allow public complaint image uploads"
+  on storage.objects
+  for insert
+  to anon
+  with check (bucket_id = 'complaint-images');
