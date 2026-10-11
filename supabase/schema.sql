@@ -7,9 +7,13 @@ create table if not exists public.complaints (
   details text,
   latitude double precision not null check (latitude between -90 and 90),
   longitude double precision not null check (longitude between -180 and 180),
+  image_paths jsonb not null default '[]'::jsonb,
   status text not null default 'Submitted',
   created_at timestamptz not null default now()
 );
+
+alter table public.complaints
+  add column if not exists image_paths jsonb not null default '[]'::jsonb;
 
 alter table public.complaints enable row level security;
 
@@ -20,3 +24,17 @@ create policy "Allow public complaint submissions"
   for insert
   to anon
   with check (true);
+
+insert into storage.buckets (id, name, public)
+values ('complaint-images', 'complaint-images', false)
+on conflict (id) do update
+set name = excluded.name,
+    public = excluded.public;
+
+drop policy if exists "Allow public complaint image uploads" on storage.objects;
+
+create policy "Allow public complaint image uploads"
+  on storage.objects
+  for insert
+  to anon
+  with check (bucket_id = 'complaint-images');
